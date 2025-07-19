@@ -10,20 +10,41 @@ const cli = meow(
 	  $ hex
 
 	Options
-		--name  Your name
+		--logo     Text to display as ASCII art logo
+		--palette  Color palette for the logo (default: sunset)
+		           Available: blue, sunset, matrix, ocean, purple, pink, 
+		           fire, forest, gold, rose, ice, neon
+		--is-filled   Use filled style for the logo
 
 	Examples
-	  $ hex --name=Jane
-	  Hello, Jane
+	  $ hex --logo="HELLO" --palette=sunset
+	  Display HELLO with sunset gradient
+
+	  $ hex --logo="CODE" --palette=matrix --is-filled
+	  Display CODE with matrix colors in filled style
 `,
 	{
 		importMeta: import.meta,
 		flags: {
-			name: {
+			logo: {
 				type: 'string',
+			},
+			palette: {
+				type: 'string',
+				default: 'sunset',
+			},
+			isFilled: {
+				type: 'boolean',
+				default: true,
 			},
 		},
 	},
 );
 
-render(<App name={cli.flags.name} />);
+render(
+	<App
+		logo={cli.flags.logo}
+		palette={cli.flags.palette}
+		isFilled={cli.flags.isFilled}
+	/>,
+);
