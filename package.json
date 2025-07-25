@@ -18,6 +18,7 @@
 	"dependencies": {
 		"ink": "^4.1.0",
 		"meow": "^11.0.0",
+		"oh-my-logo": "^0.1.0",
 		"react": "^18.2.0"
 	},
 	"devDependencies": {
@@ -48,7 +49,8 @@
 		"extends": "xo-react",
 		"prettier": true,
 		"rules": {
-			"react/prop-types": "off"
+			"react/prop-types": "off",
+			"unicorn/expiring-todo-comments": "off"
 		}
 	},
 	"prettier": "@vdemedes/prettier-config"
