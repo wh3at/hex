@@ -41,10 +41,13 @@ const cli = meow(
 	},
 );
 
+const command = cli.input[0]?.startsWith('/') ? cli.input[0] : undefined;
+
 render(
 	<App
 		logo={cli.flags.logo}
 		palette={cli.flags.palette}
 		isFilled={cli.flags.isFilled}
+		command={command}
 	/>,
 );

@@ -1,23 +1,26 @@
 import React, {useEffect, useState} from 'react';
 import {Text, Box} from 'ink';
 import {render, renderFilled} from 'oh-my-logo';
+import Version from './components/version.js';
 
 type Props = {
 	readonly logo: string | undefined;
 	readonly palette: string;
 	readonly isFilled: boolean;
+	readonly command?: string;
 };
 
 export default function App({
 	logo = 'hex',
 	palette = 'sunset',
 	isFilled = true,
+	command,
 }: Props) {
 	const [asciiLogo, setAsciiLogo] = useState<string>('');
 	const [error, setError] = useState<string>('');
 
 	useEffect(() => {
-		if (logo) {
+		if (logo && !command) {
 			const generateLogo = async () => {
 				try {
 					const options = {palette};
@@ -36,7 +39,11 @@ export default function App({
 
 			void generateLogo();
 		}
-	}, [logo, palette, isFilled]);
+	}, [logo, palette, isFilled, command]);
+
+	if (command === '/version') {
+		return <Version />;
+	}
 
 	return (
 		<Box flexDirection="column">
