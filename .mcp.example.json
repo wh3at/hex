@@ -1,0 +1,47 @@
+{
+	"mcpServers": {
+		"deepwiki": {
+			"command": "npx",
+			"args": ["-y", "mcp-remote", "https://mcp.deepwiki.com/sse"]
+		},
+		"o3": {
+			"command": "npx",
+			"args": ["o3-search-mcp"],
+			"env": {
+				"OPENAI_API_KEY": "api-key-here",
+				"SEARCH_CONTEXT_SIZE": "medium",
+				"REASONING_EFFORT": "medium",
+				"OPENAI_API_TIMEOUT": "90000"
+			}
+		},
+		"serena": {
+			"type": "stdio",
+			"command": "uvx",
+			"args": [
+				"--from",
+				"git+https://github.com/oraios/serena",
+				"serena",
+				"start-mcp-server",
+				"--context",
+				"ide-assistant"
+			],
+			"env": {}
+		},
+		"context7": {
+			"type": "http",
+			"url": "https://mcp.context7.com/mcp"
+		},
+		"sequential-thinking": {
+			"command": "npx",
+			"args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+		},
+		"@21st-dev/magic": {
+			"command": "npx",
+			"args": ["-y", "@21st-dev/magic@latest", "API_KEY=\"your-api-key\""]
+		},
+		"playwright": {
+			"command": "npx",
+			"args": ["-y", "@playwright/mcp@latest"]
+		}
+	}
+}
