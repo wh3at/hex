@@ -17,10 +17,9 @@
 	],
 	"dependencies": {
 		"@browserbasehq/stagehand": "^2.4.2",
-		"dotenv": "^17.2.1",
+		"dotenv": "^16.4.5",
 		"ink": "^4.1.0",
 		"meow": "^11.0.0",
-		"oh-my-logo": "^0.1.0",
 		"playwright": "^1.54.2",
 		"react": "^18.2.0",
 		"zod": "^3.25.76"
@@ -40,15 +39,7 @@
 		"typescript": "^5.0.3",
 		"xo": "^0.53.1"
 	},
-	"ava": {
-		"extensions": {
-			"ts": "module",
-			"tsx": "module"
-		},
-		"nodeArguments": [
-			"--loader=ts-node/esm"
-		]
-	},
+	"ava": {},
 	"xo": {
 		"extends": "xo-react",
 		"prettier": true,
