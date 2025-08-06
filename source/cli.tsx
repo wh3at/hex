@@ -4,22 +4,17 @@ import {render} from 'ink';
 import meow from 'meow';
 import App from './app.js';
 
-const cli = meow(
+meow(
 	`
 	Usage
 	  $ hex
 
 	Options
 		--help     Show help
-
-	Commands
-		/version   Show version information
 `,
 	{
 		importMeta: import.meta,
 	},
 );
 
-const command = cli.input[0]?.startsWith('/') ? cli.input[0] : undefined;
-
-render(<App command={command} />);
+render(<App />);
