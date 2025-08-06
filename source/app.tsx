@@ -1,15 +1,16 @@
-import { Box, Text, useInput } from "ink";
-import { useEffect, useState } from "react";
-import Version from "./components/version.js";
+import { Box, Text, useInput } from 'ink';
+import { useEffect, useState } from 'react';
+import Version from './components/version.js';
 
 const availableCommands = [
-	{ command: "/version", description: "Show version information" },
-	{ command: "/help", description: "Show this help message" },
+	{ command: '/version', description: 'Show version information' },
+	{ command: '/help', description: 'Show this help message' },
+	{ command: '/exit', description: 'Exit the application' },
 ];
 
 export default function App() {
-	const [asciiLogo, setAsciiLogo] = useState<string>("");
-	const [currentInput, setCurrentInput] = useState<string>("");
+	const [asciiLogo, setAsciiLogo] = useState<string>('');
+	const [currentInput, setCurrentInput] = useState<string>('');
 	const [isInputMode, setIsInputMode] = useState<boolean>(false);
 	const [executedCommand, setExecutedCommand] = useState<string | undefined>(
 		undefined,
@@ -21,13 +22,20 @@ export default function App() {
 		if (!executedCommand) {
 			// Set the ASCII art logo directly
 			setAsciiLogo(
-				"██╗  ██╗███████╗██╗  ██╗\n██║  ██║██╔════╝╚██╗██╔╝\n███████║█████╗   ╚███╔╝ \n██╔══██║██╔══╝   ██╔██╗ \n██║  ██║███████╗██╔╝ ██╗\n╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝",
+				'██╗  ██╗███████╗██╗  ██╗\n██║  ██║██╔════╝╚██╗██╔╝\n███████║█████╗   ╚███╔╝ \n██╔══██║██╔══╝   ██╔██╗ \n██║  ██║███████╗██╔╝ ██╗\n╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝',
 			);
 		}
 	}, [executedCommand]);
 
 	useEffect(() => {
-		if (isInputMode && currentInput.startsWith("/")) {
+		// Handle exit command as a side effect
+		if (executedCommand === '/exit') {
+			process.exit(0);
+		}
+	}, [executedCommand]);
+
+	useEffect(() => {
+		if (isInputMode && currentInput.startsWith('/')) {
 			const filtered = availableCommands
 				.filter((cmd) => cmd.command.startsWith(currentInput))
 				.map((cmd) => cmd.command);
@@ -40,35 +48,33 @@ export default function App() {
 	}, [currentInput, isInputMode]);
 
 	useInput((input, key) => {
-		if (!isInputMode && input === "/") {
+		// Handle Escape key when a command is executed to return to main menu
+		if (executedCommand && key.escape) {
+			setExecutedCommand(undefined);
+			return;
+		}
+
+		if (!isInputMode && input === '/') {
 			setIsInputMode(true);
-			setCurrentInput("/");
+			setCurrentInput('/');
 		} else if (isInputMode) {
-			if (key.tab && !key.shift) {
-				// Tab key: move to next suggestion
+			if (key.tab) {
+				// Tab key: cycle through suggestions
 				if (suggestions.length > 0) {
 					const nextIndex = (selectedIndex + 1) % suggestions.length;
 					setSelectedIndex(nextIndex);
 					setCurrentInput(suggestions[nextIndex]!);
 				}
-			} else if (key.tab && key.shift) {
-				// Shift+Tab: move to previous suggestion
-				if (suggestions.length > 0) {
-					const prevIndex =
-						selectedIndex === 0 ? suggestions.length - 1 : selectedIndex - 1;
-					setSelectedIndex(prevIndex);
-					setCurrentInput(suggestions[prevIndex]!);
-				}
 			} else if (key.escape) {
 				setIsInputMode(false);
-				setCurrentInput("");
+				setCurrentInput('');
 				setSuggestions([]);
 				setSelectedIndex(0);
 			} else if (key.return) {
 				// Execute command
 				setExecutedCommand(currentInput);
 				setIsInputMode(false);
-				setCurrentInput("");
+				setCurrentInput('');
 				setSuggestions([]);
 				setSelectedIndex(0);
 			} else if (key.backspace || key.delete) {
@@ -86,16 +92,16 @@ export default function App() {
 
 	const activeCommand = executedCommand;
 
-	if (activeCommand === "/version") {
+	if (activeCommand === '/version') {
 		return (
 			<Box flexDirection="column">
 				<Version />
-				<Text color="gray">Press {'"/'} to enter a command</Text>
+				<Text color="gray">Press Esc to return</Text>
 			</Box>
 		);
 	}
 
-	if (activeCommand === "/help") {
+	if (activeCommand === '/help') {
 		return (
 			<Box flexDirection="column" paddingY={1}>
 				<Box borderStyle="round" paddingX={2} paddingY={1}>
@@ -105,8 +111,9 @@ export default function App() {
 						</Text>
 						<Text color="green">/version - Show version information</Text>
 						<Text color="green">/help - Show this help message</Text>
+						<Text color="green">/exit - Exit the application</Text>
 						<Box marginTop={1}>
-							<Text color="gray">Press {'"/'} to start typing a command</Text>
+							<Text color="gray">Press Esc to return to main menu</Text>
 						</Box>
 					</Box>
 				</Box>
@@ -132,9 +139,9 @@ export default function App() {
 							{suggestions.map((suggestion, index) => (
 								<Text
 									key={suggestion}
-									color={index === selectedIndex ? "cyan" : "gray"}
+									color={index === selectedIndex ? 'cyan' : 'gray'}
 								>
-									{index === selectedIndex ? "▶ " : "  "}
+									{index === selectedIndex ? '▶ ' : '  '}
 									{suggestion}
 								</Text>
 							))}
