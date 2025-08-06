@@ -58,12 +58,23 @@ export default function App() {
 			setIsInputMode(true);
 			setCurrentInput('/');
 		} else if (isInputMode) {
-			if (key.tab) {
-				// Tab key: cycle through suggestions
+			if (key.upArrow) {
+				// Up arrow: select previous suggestion
+				if (suggestions.length > 0) {
+					const prevIndex =
+						selectedIndex === 0 ? suggestions.length - 1 : selectedIndex - 1;
+					setSelectedIndex(prevIndex);
+				}
+			} else if (key.downArrow) {
+				// Down arrow: select next suggestion
 				if (suggestions.length > 0) {
 					const nextIndex = (selectedIndex + 1) % suggestions.length;
 					setSelectedIndex(nextIndex);
-					setCurrentInput(suggestions[nextIndex]!);
+				}
+			} else if (key.tab) {
+				// Tab key: complete with selected suggestion
+				if (suggestions.length > 0 && suggestions[selectedIndex]) {
+					setCurrentInput(suggestions[selectedIndex]!);
 				}
 			} else if (key.escape) {
 				setIsInputMode(false);
@@ -134,7 +145,7 @@ export default function App() {
 					{suggestions.length > 0 && (
 						<Box flexDirection="column" marginTop={1}>
 							<Text color="gray" dimColor>
-								Suggestions (use Tab to cycle):
+								Suggestions (↑↓ to select, Tab to complete):
 							</Text>
 							{suggestions.map((suggestion, index) => (
 								<Text
