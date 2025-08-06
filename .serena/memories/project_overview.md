@@ -1,27 +1,31 @@
 # プロジェクト概要
 
 ## プロジェクト名
-hex - ASCIIアートロゴジェネレーターCLIツール
+
+hex - ASCII アートロゴジェネレーター CLI ツール
 
 ## 目的
-oh-my-logoライブラリを使用してカスタマイズ可能なASCIIアートロゴを生成し、ターミナルに表示するCLIアプリケーション。
+
+oh-my-logo ライブラリを使用してカスタマイズ可能な ASCII アートロゴを生成し、ターミナルに表示する CLI アプリケーション。
 
 ## 技術スタック
+
 - **言語**: TypeScript
-- **フレームワーク**: 
+- **フレームワーク**:
   - Ink (React for CLI)
   - React 18
 - **主要ライブラリ**:
-  - meow: CLI引数パーサー
-  - oh-my-logo: ASCIIアートジェネレーター
+  - meow: CLI 引数パーサー
+  - oh-my-logo: ASCII アートジェネレーター
 - **開発ツール**:
   - TypeScript 5
   - AVA: テストランナー
-  - XO: ESLintベースのリンター
+  - XO: ESLint ベースのリンター
   - Prettier: コードフォーマッター
-- **Node.js**: 16以上
+- **Node.js**: 16 以上
 
 ## プロジェクト構造
+
 ```
 /
 ├── source/
@@ -36,7 +40,8 @@ oh-my-logoライブラリを使用してカスタマイズ可能なASCIIアー�
 ```
 
 ## 主な機能
-- ASCIIアートロゴの生成
+
+- ASCII アートロゴの生成
 - 複数のカラーパレット対応（blue, sunset, matrix, ocean, purple, pink, fire, forest, gold, rose, ice, neon）
 - 塗りつぶしスタイルのサポート
-- バージョン情報の表示（/versionコマンド）
+- バージョン情報の表示（/version コマンド）

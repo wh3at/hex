@@ -1,60 +1,101 @@
-import React, {useEffect, useState} from 'react';
-import {Text, Box, useInput} from 'ink';
-import Version from './components/version.js';
+import { Box, Text, useInput } from "ink";
+import { useEffect, useState } from "react";
+import Version from "./components/version.js";
+
+const availableCommands = [
+	{ command: "/version", description: "Show version information" },
+	{ command: "/help", description: "Show this help message" },
+];
 
 export default function App() {
-	const [asciiLogo, setAsciiLogo] = useState<string>('');
-	const [currentInput, setCurrentInput] = useState<string>('');
+	const [asciiLogo, setAsciiLogo] = useState<string>("");
+	const [currentInput, setCurrentInput] = useState<string>("");
 	const [isInputMode, setIsInputMode] = useState<boolean>(false);
 	const [executedCommand, setExecutedCommand] = useState<string | undefined>(
 		undefined,
 	);
+	const [suggestions, setSuggestions] = useState<string[]>([]);
+	const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
 	useEffect(() => {
 		if (!executedCommand) {
 			// Set the ASCII art logo directly
 			setAsciiLogo(
-				'██╗  ██╗███████╗██╗  ██╗\n██║  ██║██╔════╝╚██╗██╔╝\n███████║█████╗   ╚███╔╝ \n██╔══██║██╔══╝   ██╔██╗ \n██║  ██║███████╗██╔╝ ██╗\n╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝',
+				"██╗  ██╗███████╗██╗  ██╗\n██║  ██║██╔════╝╚██╗██╔╝\n███████║█████╗   ╚███╔╝ \n██╔══██║██╔══╝   ██╔██╗ \n██║  ██║███████╗██╔╝ ██╗\n╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝",
 			);
 		}
 	}, [executedCommand]);
 
+	useEffect(() => {
+		if (isInputMode && currentInput.startsWith("/")) {
+			const filtered = availableCommands
+				.filter((cmd) => cmd.command.startsWith(currentInput))
+				.map((cmd) => cmd.command);
+			setSuggestions(filtered);
+			setSelectedIndex(0);
+		} else {
+			setSuggestions([]);
+			setSelectedIndex(0);
+		}
+	}, [currentInput, isInputMode]);
+
 	useInput((input, key) => {
-		if (!isInputMode && input === '/') {
+		if (!isInputMode && input === "/") {
 			setIsInputMode(true);
-			setCurrentInput('/');
+			setCurrentInput("/");
 		} else if (isInputMode) {
-			if (key.escape) {
+			if (key.tab && !key.shift) {
+				// Tab key: move to next suggestion
+				if (suggestions.length > 0) {
+					const nextIndex = (selectedIndex + 1) % suggestions.length;
+					setSelectedIndex(nextIndex);
+					setCurrentInput(suggestions[nextIndex]!);
+				}
+			} else if (key.tab && key.shift) {
+				// Shift+Tab: move to previous suggestion
+				if (suggestions.length > 0) {
+					const prevIndex =
+						selectedIndex === 0 ? suggestions.length - 1 : selectedIndex - 1;
+					setSelectedIndex(prevIndex);
+					setCurrentInput(suggestions[prevIndex]!);
+				}
+			} else if (key.escape) {
 				setIsInputMode(false);
-				setCurrentInput('');
+				setCurrentInput("");
+				setSuggestions([]);
+				setSelectedIndex(0);
 			} else if (key.return) {
 				// Execute command
 				setExecutedCommand(currentInput);
 				setIsInputMode(false);
-				setCurrentInput('');
+				setCurrentInput("");
+				setSuggestions([]);
+				setSelectedIndex(0);
 			} else if (key.backspace || key.delete) {
-				setCurrentInput(previous => previous.slice(0, -1));
+				setCurrentInput((previous) => previous.slice(0, -1));
 				if (currentInput.length <= 1) {
 					setIsInputMode(false);
+					setSuggestions([]);
+					setSelectedIndex(0);
 				}
-			} else if (input && !key.ctrl && !key.meta) {
-				setCurrentInput(previous => previous + input);
+			} else if (input && !key.ctrl && !key.meta && !key.tab) {
+				setCurrentInput((previous) => previous + input);
 			}
 		}
 	});
 
 	const activeCommand = executedCommand;
 
-	if (activeCommand === '/version') {
+	if (activeCommand === "/version") {
 		return (
 			<Box flexDirection="column">
 				<Version />
-				<Text color="gray">Press {'"/"'} to enter a command</Text>
+				<Text color="gray">Press {'"/'} to enter a command</Text>
 			</Box>
 		);
 	}
 
-	if (activeCommand === '/help') {
+	if (activeCommand === "/help") {
 		return (
 			<Box flexDirection="column" paddingY={1}>
 				<Box borderStyle="round" paddingX={2} paddingY={1}>
@@ -65,7 +106,7 @@ export default function App() {
 						<Text color="green">/version - Show version information</Text>
 						<Text color="green">/help - Show this help message</Text>
 						<Box marginTop={1}>
-							<Text color="gray">Press {'"/"'} to start typing a command</Text>
+							<Text color="gray">Press {'"/'} to start typing a command</Text>
 						</Box>
 					</Box>
 				</Box>
@@ -81,14 +122,30 @@ export default function App() {
 				</Box>
 			)}
 			{isInputMode && (
-				<Box marginTop={1}>
+				<Box marginTop={1} flexDirection="column">
 					<Text color="cyan">› {currentInput}</Text>
+					{suggestions.length > 0 && (
+						<Box flexDirection="column" marginTop={1}>
+							<Text color="gray" dimColor>
+								Suggestions (use Tab to cycle):
+							</Text>
+							{suggestions.map((suggestion, index) => (
+								<Text
+									key={suggestion}
+									color={index === selectedIndex ? "cyan" : "gray"}
+								>
+									{index === selectedIndex ? "▶ " : "  "}
+									{suggestion}
+								</Text>
+							))}
+						</Box>
+					)}
 				</Box>
 			)}
 			{!isInputMode && (
 				<Box marginTop={1}>
 					<Text color="gray">
-						Press {'"/"'} to enter a command, or type /help for help
+						Press {'"/'} to enter a command, or type /help for help
 					</Text>
 				</Box>
 			)}

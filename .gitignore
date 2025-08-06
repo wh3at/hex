@@ -3,3 +3,4 @@ dist
 .mcp.json
 .serena/cache/
 .env
+bun.lockb
