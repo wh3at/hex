@@ -136,7 +136,7 @@ export default function App() {
 		<Box flexDirection="column">
 			{asciiLogo && (
 				<Box marginBottom={1}>
-					<Text>{asciiLogo}</Text>
+					<Text color="#FF6B35">{asciiLogo}</Text>
 				</Box>
 			)}
 			{isInputMode && (
