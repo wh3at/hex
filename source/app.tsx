@@ -152,7 +152,7 @@ export default function App() {
 									key={suggestion}
 									color={index === selectedIndex ? 'cyan' : 'gray'}
 								>
-									{index === selectedIndex ? '▶ ' : '  '}
+									{index === selectedIndex ? '> ' : '  '}
 									{suggestion}
 								</Text>
 							))}

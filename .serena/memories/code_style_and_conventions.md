@@ -6,6 +6,23 @@
 - 出力ディレクトリ: `dist/`
 - ES モジュール使用（`"type": "module"`）
 
+## コード品質ツール
+
+### TypeScript
+- **設定**: `tsconfig.json`で設定、`@sindresorhus/tsconfig`を拡張
+- **目的**: 静的型チェックとトランスパイル
+- **ビルド出力**: `dist/`ディレクトリ
+
+### Biome
+- **役割**: ESLintとPrettierを置き換えるモダンなリンター・フォーマッター
+- **設定**: `biome.json`で設定
+- **統合機能**: コードフォーマットとリンティングを一つのツールで実行
+
+### AVA
+- **役割**: テストランナー
+- **特徴**: ts-nodeによるTypeScript/TSXサポート
+- **用途**: ユニットテストと統合テストの実行
+
 ## コードフォーマット
 
 - **インデント**: タブ（.editorconfig で定義）
@@ -15,18 +32,21 @@
 - **ファイル末尾**: 改行を挿入
 - **YAML ファイル**: スペース 2 つでインデント
 
-## Prettier 設定
+## Biome 設定詳細
 
-- `@vdemedes/prettier-config`を使用
-- XO との互換性を保持
-
-## ESLint/XO 設定
-
-- `xo-react`を拡張
-- Prettier との統合有効
+- 統合されたリンター・フォーマッター
+- インデントスタイル: タブ
+- インデント幅: 2
+- 引用符: シングルクォート（JavaScript）
+- セミコロン: 必須
+- 末尾カンマ: すべて
+- JSX引用符: ダブルクォート
+- 行幅: 80
 - カスタムルール:
-  - `react/prop-types`: オフ（TypeScript の型を使用）
-  - `unicorn/expiring-todo-comments`: オフ
+  - `noForEach`: オフ
+  - `useImportType`: オフ
+  - `noNonNullAssertion`: オフ
+  - `noExplicitAny`: オフ
 
 ## React/Ink 規約
 

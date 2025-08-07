@@ -40,5 +40,14 @@
 		"ts-node": "^10.9.1",
 		"typescript": "^5.0.3"
 	},
-	"ava": {}
+	"ava": {
+		"files": [
+			"test.js"
+		],
+		"timeout": "60s",
+		"verbose": true,
+		"require": [
+			"ts-node/register"
+		]
+	}
 }
