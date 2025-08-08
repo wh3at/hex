@@ -51,6 +51,8 @@ Kiro-style Spec Driven Development implementation using claude code slash comman
 
 ### Current Steering Files
 Managed by `/kiro:steering` command. Updates here reflect command changes.
+- Last updated: 2025-08-08
+- Files created: product.md, tech.md, structure.md
 
 ### Active Steering Files
 - `product.md`: Always included - Product context and business objectives
