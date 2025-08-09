@@ -1,0 +1,23 @@
+{
+  "feature_name": "flight-guide-generator",
+  "project_description": "フライトパーキングという羽田空港のvalet serviceでは、出発前日にお客さんの搭乗便名から航空会社の公式サイトで搭乗口を検索してスクリーンショットを撮影し、あらかじめ用意したターミナルの画像と合成して案内の際に送っています。この案内用の画像を指定した便名で作成するコマンドを実装して欲しい。",
+  "created_at": "2025-08-08T01:42:00Z",
+  "updated_at": "2025-08-08T02:25:00Z",
+  "language": "japanese",
+  "phase": "design-generated",
+  "approvals": {
+    "requirements": {
+      "generated": true,
+      "approved": true
+    },
+    "design": {
+      "generated": true,
+      "approved": false
+    },
+    "tasks": {
+      "generated": false,
+      "approved": false
+    }
+  },
+  "ready_for_implementation": false
+}
