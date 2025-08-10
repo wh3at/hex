@@ -2,321 +2,271 @@
 
 ## Overview
 
-本機能は、羽田空港バレーパーキングサービスの業務効率化を目的とした搭乗口案内画像自動生成ツールです。
-便名を入力として、JAL・ANAの公式サイトから搭乗口情報を自動取得し、ターミナル画像と合成して顧客向け案内画像を生成します。
-既存のHEXプロジェクトのReact/Inkベースのインタラクティブコマンドラインツールとして実装され、Stagehandを活用したブラウザ自動操作により手動作業を大幅に削減します。
+フライトパーキングの搭乗口案内画像自動生成システムは、TypeScript/React（Ink）ベースのCLIツールとして実装されます。Playwright/Stagehandを活用して航空会社公式サイトから搭乗口情報を取得し、Sharpライブラリで画像合成を行います。バッチ処理に対応し、複数の便名を効率的に処理できる設計とします。
 
 ## Requirements Mapping
 
 ### Design Component Traceability
+
 各設計コンポーネントが対応する要件：
-- **コマンドパーサー（CommandParser）** → REQ-1: 便名入力と検証
-- **フライト情報スクレイパー（FlightScraper）** → REQ-2: 搭乗口情報の取得、REQ-10: 対応航空会社
-- **スクリーンショットサービス（ScreenshotService）** → REQ-3: スクリーンショット撮影
-- **画像合成エンジン（ImageComposer）** → REQ-4: ターミナル画像との合成
-- **ファイルマネージャー（FileManager）** → REQ-5: 出力ファイル管理
-- **設定管理（ConfigManager）** → REQ-6: 設定とカスタマイズ
-- **エラーハンドラー（ErrorHandler）** → REQ-7: エラーハンドリングとロギング
-- **UIコンポーネント（FlightGuideUI）** → REQ-9: ユーザーインターフェース
+
+- **FlightCodeValidator** → REQ-1: 便名入力と検証（形式検証、航空会社識別）
+- **GateInfoScraper** → REQ-2: 搭乗口情報の取得（JAL/ANA公式サイト対応）
+- **ScreenshotCapture** → REQ-3: スクリーンショット撮影（証跡画像取得）
+- **ImageComposer** → REQ-4: ターミナル画像との合成（搭乗口マーキング）
+- **FileManager** → REQ-5: 出力ファイル管理（日付/便名形式での保存）
+- **ConfigManager** → REQ-6: 設定とカスタマイズ（ターミナル画像パス管理）
+- **ErrorHandler** → REQ-7: エラーハンドリングとロギング（詳細ログ記録）
+- **BatchProcessor** → REQ-8: パフォーマンスと信頼性（バッチ処理機能）
+- **CLIInterface** → REQ-9: ユーザーインターフェース（Inkベースの対話的UI）
+- **AirlineFilter** → REQ-10: 対応航空会社（JAL/ANA判定とフィルタリング）
 
 ### User Story Coverage
-- **複数便名の効率的入力**: バッチ処理モードによるコマンドパーサーで対応
-- **自動搭乗口情報取得**: Stagehandを使用したインテリジェント要素検出で実現
-- **証跡スクリーンショット**: Playwrightの高品質スクリーンショット機能で対応
-- **視覚的に分かりやすい案内画像**: Sharp による高速画像合成
-- **適切なファイル管理**: 日付/便名ベースの自動命名規則で整理
-- **柔軟な設定管理**: JSONベース設定ファイルとホットリロード対応
-- **エラー時の詳細情報**: 構造化ログとユーザーフレンドリーメッセージの二層化
-- **迅速な処理**: シンプルな実装による適切な処理速度
-- **直感的UI**: InkコンポーネントによるインタラクティブターミナルUI
-- **JAL/ANA国内線対応**: 航空会社別スクレイピング戦略の実装
+
+- **複数便名の効率的入力**: BatchProcessorとCLIInterfaceが連携してバッチ入力を処理
+- **自動搭乗口取得**: GateInfoScraperがPlaywrightで航空会社サイトを自動操作
+- **証跡スクリーンショット**: ScreenshotCaptureが搭乗口情報の証拠画像を保存
+- **自動画像合成**: ImageComposerがSharpで搭乗口位置をマーキング
+- **適切な保存管理**: FileManagerが日付別フォルダに整理して保存
 
 ## Architecture
 
-フライトガイドジェネレーターは、既存のHEXプロジェクトにモジュラーアーキテクチャで統合されます。
-
 ```mermaid
 graph TB
-    subgraph "CLI Layer"
-        A[FlightGuideCommand] --> B[CommandParser]
-        B --> C[BatchProcessor]
-    end
+    A[CLI Interface/Ink UI] --> B[Command Parser]
+    B --> C[Batch Processor]
+    C --> D[Flight Code Validator]
+    D --> E[Airline Filter]
+    E --> F[Gate Info Scraper]
+    F --> G[Screenshot Capture]
+    G --> H[Image Composer]
+    H --> I[File Manager]
     
-    subgraph "Scraping Layer"
-        C --> D[FlightScraper]
-        D --> E[Stagehand Automation]
-        E --> F[JAL Strategy]
-        E --> G[ANA Strategy]
-    end
+    J[Config Manager] --> F
+    J --> H
+    J --> I
     
-    subgraph "Processing Layer"
-        F --> H[ScreenshotService]
-        G --> H
-        H --> I[ImageComposer]
-        I --> J[Sharp Engine]
-    end
+    K[Error Handler] --> A
+    K --> F
+    K --> H
     
-    subgraph "Storage Layer"
-        J --> L[FileManager]
-        L --> M[Output Directory]
-    end
-    
-    subgraph "Support Layer"
-        N[ConfigManager] -.-> D
-        N -.-> I
-        O[ErrorHandler] -.-> D
-        O -.-> I
-    end
+    L[Logger] --> K
 ```
 
 ### Technology Stack
+
 研究結果に基づく技術選定：
 
-- **Frontend**: React + Ink 4.1.0 (既存プロジェクトと統合)
-- **Backend**: TypeScript 5.0.3 + Bun/Node.js Runtime
-- **Browser Automation**: Stagehand 2.4.2 + Playwright 1.54.2
-- **Image Processing**: Sharp (高速画像合成)
-- **Validation**: Zod 3.25.76 (便名・設定検証)
-- **Testing**: AVA 5.2.0 + ink-testing-library 3.0.0
-- **Logging**: Pino (構造化ログ)
+- **Frontend CLI**: Ink 4.1.0 + React 18.2.0 + TypeScript
+- **Command Parser**: Meow 11.0.0（引数解析）
+- **Web Automation**: Playwright 1.54.2 + Stagehand 2.4.2（ブラウザ自動化）
+- **Image Processing**: Sharp（高速画像合成）+ SVGテキストオーバーレイ
+- **Validation**: Zod 3.25.76（便名形式検証）
 - **Configuration**: dotenv + JSON設定ファイル
+- **Logging**: Winston/Pino（構造化ログ）
+- **Testing**: AVA + ink-testing-library + Playwright Test
 
 ### Architecture Decision Rationale
-研究に基づく技術選定理由：
 
-- **Stagehand選択理由**: ユーザー指定の要件。Playwrightベースで高度な要素検出が可能
-- **Sharp採用理由**: 画像合成で4-5倍高速、シンプルな実装で要件を満たす
-- **Ink継続使用**: 既存プロジェクトとの統合性、React知識の活用
-- **Zod採用**: 実行時型検証により便名形式の確実な検証
-- **構造化ログ**: デバッグ効率とプロダクション監視の両立
+- **Ink Framework採用理由**: プロジェクトの既存技術スタックとの統合性、Reactパターンによる保守性向上
+- **Playwright選択理由**: 動的コンテンツ対応、ヘッドレスモード対応、マルチブラウザサポート
+- **Sharp採用理由**: Node.js最速の画像処理ライブラリ、ImageMagickより4-5倍高速
+- **Zod検証理由**: TypeScript型安全性、ランタイム検証、エラーメッセージのカスタマイズ性
 
 ## Data Flow
 
 ### Primary User Flows
 
-#### 単一便名処理フロー
-```mermaid
-sequenceDiagram
-    participant User
-    participant CLI
-    participant Parser
-    participant Scraper
-    participant Stagehand
-    participant Website
-    participant ImageProc
-    participant Storage
-    
-    User->>CLI: /flight-guide JL123
-    CLI->>Parser: validateFlightNumber("JL123")
-    Parser->>CLI: {airline: "JAL", number: "123"}
-    CLI->>Scraper: scrapeFlightInfo(flight)
-    Scraper->>Stagehand: navigate(JAL_URL)
-    Stagehand->>Website: GET /flight-status
-    Website-->>Stagehand: HTML Response
-    Stagehand->>Stagehand: detectGateElement()
-    Stagehand->>Scraper: {gate: "12", terminal: "1"}
-    Scraper->>ImageProc: captureScreenshot()
-    ImageProc->>ImageProc: compositeImages()
-    ImageProc->>Storage: saveGuideImage()
-    Storage-->>User: "画像を保存しました: output/2025-08-08/JL123_1030.png"
-```
+メインフロー：複数便名のバッチ処理
 
-#### バッチ処理フロー
 ```mermaid
 sequenceDiagram
     participant User
     participant CLI
-    participant Batch
-    participant Worker
-    participant Storage
-    participant Report
+    participant Validator
+    participant Scraper
+    participant Composer
+    participant FileSystem
     
-    User->>CLI: /flight-guide JL123 NH456 BC789
-    CLI->>Batch: processBatch(["JL123", "NH456", "BC789"])
-    Batch->>Batch: filterJALANA(flights)
-    Note over Batch: BC789をスキップ
+    User->>CLI: hex flight-guide JL123 NH456
+    CLI->>Validator: 便名形式検証
+    Validator->>CLI: 検証結果（JAL/ANA判定）
     
-    par 並列処理
-        Batch->>Worker: process("JL123")
-        and
-        Batch->>Worker: process("NH456")
+    loop 各便名について
+        CLI->>Scraper: 搭乗口情報取得
+        Scraper->>Scraper: Playwright起動
+        Scraper->>Scraper: 公式サイトアクセス
+        Scraper->>Scraper: スクリーンショット撮影
+        Scraper->>CLI: 搭乗口データ+画像
+        
+        CLI->>Composer: 画像合成要求
+        Composer->>Composer: ターミナル画像選択
+        Composer->>Composer: Sharp合成処理
+        Composer->>CLI: 合成画像
+        
+        CLI->>FileSystem: 画像保存
+        FileSystem->>CLI: 保存完了
+        
+        CLI->>User: 進捗表示更新
     end
     
-    Worker-->>Storage: 画像保存
-    Batch->>Report: generateReport()
-    Report-->>User: 処理結果サマリー表示
+    CLI->>User: 処理完了サマリー
 ```
 
 ## Components and Interfaces
 
 ### Backend Services & Method Signatures
 
-#### FlightScraper Service
 ```typescript
-class FlightScraper {
-    async scrapeFlightInfo(flightNumber: string): Promise<FlightInfo>  // 搭乗口情報取得
-    async detectAirline(flightNumber: string): AirlineType             // 航空会社判定
-    private async scrapeJAL(flightNumber: string): Promise<FlightInfo> // JAL専用処理
-    private async scrapeANA(flightNumber: string): Promise<FlightInfo> // ANA専用処理
-    async retryWithBackoff<T>(fn: () => Promise<T>): Promise<T>       // リトライ機構
+// 便名検証サービス
+class FlightCodeValidator {
+    validateFormat(code: string): ValidationResult          // 便名形式検証
+    extractAirline(code: string): Airline                  // 航空会社識別
+    validateBatch(codes: string[]): ValidationResult[]     // バッチ検証
 }
-```
 
-#### ImageComposer Service
-```typescript
+// 搭乗口情報取得サービス  
+class GateInfoScraper {
+    async scrapeJAL(flightCode: string): Promise<GateInfo>    // JAL搭乗口取得
+    async scrapeANA(flightCode: string): Promise<GateInfo>    // ANA搭乗口取得
+    async captureScreenshot(page: Page): Promise<Buffer>      // スクリーンショット
+}
+
+// 画像合成サービス
 class ImageComposer {
-    async compositeImages(screenshot: Buffer, terminal: number): Promise<Buffer> // 画像合成
-    async optimizeOutput(image: Buffer): Promise<Buffer>                        // 最適化
-    private getCompositePosition(terminal: number): {top: number, left: number} // 合成位置計算
+    async loadTerminalMap(terminal: Terminal): Promise<Sharp>     // ターミナル画像読込
+    async overlayGateInfo(base: Buffer, info: GateInfo): Promise<Buffer>  // 情報オーバーレイ
+    async addTextAnnotation(image: Buffer, text: string): Promise<Buffer> // テキスト追加
 }
-```
 
-#### FileManager Service
-```typescript
+// ファイル管理サービス
 class FileManager {
-    async saveImage(buffer: Buffer, flightNumber: string): Promise<string> // 画像保存
-    async checkDuplicate(path: string): Promise<boolean>                   // 重複確認
-    async createDateDirectory(): Promise<string>                           // 日付フォルダ作成
-    async cleanupOldFiles(days: number): Promise<void>                     // 古いファイル削除
+    generateFilePath(flight: string, date: Date): string      // パス生成
+    async saveImage(path: string, buffer: Buffer): Promise<void>  // 画像保存
+    async checkConflict(path: string): Promise<boolean>       // 重複チェック
 }
 ```
 
 ### Frontend Components
 
 | Component Name | Responsibility | Props/State Summary |
-|----------------|---------------|-------------------|
-| FlightGuideCommand | メインコマンドコンポーネント | `{flights: string[], mode: 'single'\|'batch'}` |
-| FlightInput | 便名入力インターフェース | `{onSubmit: (flights) => void, validation: boolean}` |
-| ProgressIndicator | 処理進捗表示 | `{current: number, total: number, status: string}` |
-| ResultSummary | 処理結果サマリー表示 | `{results: ProcessResult[], failures: Error[]}` |
-| GatePreview | 搭乗口情報プレビュー | `{flightInfo: FlightInfo, imageUrl?: string}` |
-| ErrorDisplay | エラー情報表示 | `{error: Error, suggestions: string[]}` |
-| ConfigEditor | 設定編集UI | `{config: Config, onChange: (config) => void}` |
+|---|---|---|
+| `<App>` | メインアプリケーションコンテナ | flights[], currentIndex, status |
+| `<BatchInput>` | 便名入力インターフェース | onSubmit, validation |
+| `<ProgressBar>` | バッチ処理進捗表示 | current, total, percentage |
+| `<FlightStatus>` | 個別便処理状態表示 | flight, status, gateInfo |
+| `<ResultSummary>` | 処理結果サマリー | successful[], failed[], skipped[] |
+| `<ErrorDisplay>` | エラー詳細表示 | error, suggestions |
+| `<ConfigEditor>` | 設定編集UI | config, onSave |
 
 ### API Endpoints
 
-内部コマンドAPI（CLIコマンドとして実装）：
+内部コマンドインターフェース（CLIコマンド）：
 
-| Command | Route Pattern | Purpose | Auth | Response |
-|---------|--------------|---------|------|----------|
-| flight-guide | `/flight-guide [flights...]` | 搭乗口案内画像生成 | N/A | 画像パス |
-| flight-config | `/flight-config set <key> <value>` | 設定変更 | N/A | 確認メッセージ |
-| flight-config | `/flight-config get [key]` | 設定取得 | N/A | 設定値 |
-| flight-batch | `/flight-batch <file>` | CSVバッチ処理 | N/A | 処理結果 |
-| flight-clean | `/flight-clean [days]` | 古いファイル削除 | N/A | 削除数 |
+| Command | Route | Purpose | Options | Output |
+|---|---|---|---|---|
+| hex | flight-guide [flights...] | 搭乗口案内画像生成 | --output, --config | 生成画像パス |
+| hex | flight-guide --batch FILE | バッチファイル処理 | --output, --parallel | 処理結果JSON |
+| hex | flight-guide --config | 設定表示/編集 | --edit, --reset | 設定内容 |
+| hex | flight-guide --help | ヘルプ表示 | - | 使用方法 |
 
 ## Data Models
 
 ### Domain Entities
-1. **FlightInfo**: 便情報と搭乗口データ
-2. **TerminalImage**: ターミナル画像テンプレート
-3. **GuideImage**: 生成された案内画像
-4. **ProcessResult**: 処理結果とメタデータ
-5. **Configuration**: アプリケーション設定
+
+1. **FlightInfo**: 便名と航空会社情報
+2. **GateInfo**: 搭乗口と関連情報
+3. **ProcessResult**: 処理結果と生成画像パス
+4. **Config**: アプリケーション設定
 
 ### Entity Relationships
+
 ```mermaid
 erDiagram
-    FLIGHT_INFO ||--o{ GUIDE_IMAGE : "generates"
-    TERMINAL_IMAGE ||--o{ GUIDE_IMAGE : "uses"
-    FLIGHT_INFO {
-        string flightNumber
-        string airline
-        string gate
-        number terminal
-        datetime departureTime
-        string destination
-    }
-    TERMINAL_IMAGE {
-        string id
-        number terminalNumber
-        string imagePath
-        json markerPositions
-    }
-    GUIDE_IMAGE {
-        string id
-        string flightNumber
-        string outputPath
-        datetime createdAt
-        json metadata
-    }
+    FLIGHT_INFO ||--o| GATE_INFO : "has"
+    GATE_INFO ||--o| SCREENSHOT : "contains"
+    FLIGHT_INFO ||--o| PROCESS_RESULT : "generates"
+    PROCESS_RESULT ||--o| OUTPUT_IMAGE : "creates"
+    CONFIG ||--o{ TERMINAL_MAP : "defines"
 ```
 
 ### Data Model Definitions
 
 ```typescript
-// 便情報
+// TypeScript インターフェース定義
+
 interface FlightInfo {
-  flightNumber: string;      // 便名 (例: "JL123")
-  airline: "JAL" | "ANA";     // 航空会社
-  gate?: string;              // 搭乗口 (例: "12")
-  terminal: 1 | 2 | 3;        // ターミナル番号
-  departureTime: Date;        // 出発時刻
-  destination: string;        // 目的地
-  status: "on-time" | "delayed" | "cancelled" | "gate-unassigned";
+  id: string;
+  code: string;              // 便名 (例: JL123)
+  airline: 'JAL' | 'ANA' | 'OTHER';
+  departureDate: Date;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'skipped';
+  createdAt: Date;
   updatedAt: Date;
 }
 
-// 処理結果
-interface ProcessResult {
-  flightNumber: string;
-  success: boolean;
-  outputPath?: string;
-  error?: Error;
-  processingTime: number;      // ミリ秒
-  retryCount: number;
-  metadata: {
-    screenshotPath?: string;
-    gateInfo?: FlightInfo;
-    skippedReason?: string;
-  };
+interface GateInfo {
+  flightId: string;
+  gateNumber: string;        // 搭乗口番号
+  terminal: 1 | 2 | 3;       // ターミナル番号
+  departureTime: string;
+  boardingTime?: string;
+  status: 'confirmed' | 'tentative' | 'unknown';
+  screenshotPath?: string;
+  scrapedAt: Date;
 }
 
-// 設定
-interface FlightGuideConfig {
-  terminals: {
-    1: { imagePath: string; screenshotPosition: Point; };
-    2: { imagePath: string; screenshotPosition: Point; };
-    3: { imagePath: string; screenshotPosition: Point; };
+interface ProcessResult {
+  flightId: string;
+  success: boolean;
+  outputImagePath?: string;
+  thumbnailPath?: string;
+  error?: ErrorDetail;
+  processingTime: number;    // ミリ秒
+  createdAt: Date;
+}
+
+interface Config {
+  outputDirectory: string;
+  terminalMaps: {
+    terminal1: string;
+    terminal2: string;
+    terminal3: string;
   };
-  output: {
-    directory: string;
-    format: "png" | "jpeg";
-    quality: number;          // 1-100
-    fileNamePattern: string;  // e.g., "{date}/{flight}_{time}.{ext}"
-  };
-  scraping: {
-    timeout: number;          // ミリ秒
-    retryAttempts: number;
-    retryDelay: number;       // ミリ秒
-    headless: boolean;
-  };
-  processing: {
-    compositeBlend: "over" | "multiply" | "screen";  // 合成モード
-    screenshotScale: number;  // スクリーンショットのスケール (0.1-1.0)
+  imageQuality: number;      // 1-100
+  parallel: boolean;
+  maxRetries: number;
+  timeout: number;           // ミリ秒
+  airlines: {
+    JAL: { url: string; selector: string };
+    ANA: { url: string; selector: string };
   };
 }
 ```
 
 ### Database Schema
-本機能ではデータベースは使用せず、ファイルシステムベースの保存を採用：
+
+ローカルファイルベースストレージ（データベース不要）：
 
 ```
-output/
-├── 2025-08-08/
-│   ├── JL123_1030.png
-│   ├── NH456_1145.png
-│   └── metadata.json
-├── 2025-08-09/
-│   └── ...
-└── archive/
-    └── ...
+.hex-flight-guide/
+├── config.json              # アプリケーション設定
+├── logs/                    # ログファイル
+│   └── 2025-08-08.log
+├── cache/                   # 一時キャッシュ
+│   └── screenshots/
+└── output/                  # 生成画像
+    └── 2025-08-08/
+        ├── JL123_1430.png
+        └── NH456_1600.png
 ```
 
 ### Migration Strategy
-- 初回起動時に必要なディレクトリ構造を自動作成
-- 設定ファイルのバージョン管理とマイグレーション
-- 古い画像の自動アーカイブ機能
+
+- 設定ファイルバージョニング（config.version）
+- 後方互換性のためのデフォルト値提供
+- 設定移行スクリプトの自動実行
+- 古い形式の検出と警告表示
 
 ## Error Handling
 
@@ -324,121 +274,194 @@ output/
 
 ```typescript
 enum ErrorType {
-  VALIDATION_ERROR = "VALIDATION_ERROR",           // 入力検証エラー
-  NETWORK_ERROR = "NETWORK_ERROR",                 // ネットワーク障害
-  SCRAPING_ERROR = "SCRAPING_ERROR",               // スクレイピング失敗
-  ELEMENT_NOT_FOUND = "ELEMENT_NOT_FOUND",         // 要素検出失敗
-  IMAGE_PROCESSING_ERROR = "IMAGE_PROCESSING_ERROR", // 画像処理エラー
-  FILE_SYSTEM_ERROR = "FILE_SYSTEM_ERROR",         // ファイル操作エラー
-  CONFIG_ERROR = "CONFIG_ERROR",                   // 設定エラー
+  VALIDATION_ERROR = 'VALIDATION_ERROR',           // 入力検証エラー
+  NETWORK_ERROR = 'NETWORK_ERROR',                 // ネットワーク接続エラー
+  SCRAPING_ERROR = 'SCRAPING_ERROR',              // スクレイピング失敗
+  IMAGE_PROCESSING_ERROR = 'IMAGE_PROCESSING_ERROR', // 画像処理エラー
+  FILE_SYSTEM_ERROR = 'FILE_SYSTEM_ERROR',        // ファイル操作エラー
+  CONFIG_ERROR = 'CONFIG_ERROR',                  // 設定エラー
+  TIMEOUT_ERROR = 'TIMEOUT_ERROR',                // タイムアウト
 }
 
 class ErrorHandler {
-  handleError(error: AppError): ErrorResponse {
-    switch(error.type) {
-      case ErrorType.NETWORK_ERROR:
-        return { retry: true, message: "ネットワーク接続を確認してください" };
-      case ErrorType.ELEMENT_NOT_FOUND:
-        return { retry: false, message: "搭乗口情報が見つかりません", fallback: "full-screenshot" };
-      // ... 他のエラータイプ
-    }
+  handleError(error: Error, context: Context): ErrorResponse {
+    // エラータイプに応じた処理
+    // リトライ可能性の判定
+    // ユーザーフレンドリーメッセージ生成
+    // ログ記録
   }
 }
 ```
 
+## Security Considerations
+
+### Authentication & Authorization
+
+```mermaid
+sequenceDiagram
+    participant CLI
+    participant ConfigManager
+    participant Scraper
+    participant Website
+    
+    CLI->>ConfigManager: 設定読込
+    ConfigManager->>ConfigManager: 環境変数検証
+    ConfigManager->>CLI: 設定データ
+    CLI->>Scraper: スクレイピング要求
+    Scraper->>Scraper: User-Agent設定
+    Scraper->>Website: HTTPSアクセス
+    Website->>Scraper: レスポンス
+```
+
+### Data Protection
+
+- 入力検証: Zodスキーマによる厳密な便名形式検証
+- XSS対策: SVGテキスト生成時のサニタイゼーション
+- パス・トラバーサル対策: ファイルパスの正規化と検証
+- 環境変数: dotenvによる秘密情報の分離管理
+
+### Security Best Practices
+
+- レート制限: 航空会社サイトへのアクセス間隔制御（最小1秒）
+- プロキシローテーション: 検出回避のためのIPローテーション
+- ヘッドレスモード: ブラウザ自動化の隠蔽
+- User-Agent偽装: 実際のブラウザと同じUser-Agent使用
+- CAPTCHAハンドリング: 手動介入フォールバック
+
+## Performance & Scalability
+
+### Performance Targets
+
+| Metric | Target | Measurement |
+|---|---|---|
+| 単一便処理時間 | < 10秒 | 入力から画像生成まで |
+| バッチ処理（10便） | < 60秒 | 並列処理時 |
+| メモリ使用量 | < 500MB | ピーク時 |
+| CPU使用率 | < 80% | 処理中 |
+| 画像生成時間 | < 2秒 | Sharp処理 |
+| スクレイピング成功率 | > 95% | リトライ込み |
+
+### Caching Strategy
+
+- **ブラウザキャッシュ**: Playwrightセッション保持
+- **画像キャッシュ**: ターミナル画像のメモリキャッシュ
+- **搭乗口キャッシュ**: 1時間有効の搭乗口情報キャッシュ
+- **設定キャッシュ**: 起動時読込、変更監視
+
+### Scalability Approach
+
+- 並列処理: 最大5便同時処理（設定可能）
+- ブラウザプール: 複数Playwrightインスタンス管理
+- メモリ管理: 処理完了後の即時リソース解放
+- エラー分離: 個別便のエラーが全体に影響しない設計
+
 ## Testing Strategy
+
+### Test Coverage Requirements
+
+- **Unit Tests**: ≥85% コードカバレッジ
+- **Integration Tests**: 全主要フロー網羅
+- **E2E Tests**: 実際の航空会社サイトでの動作確認
+- **Performance Tests**: 10便同時処理のストレステスト
 
 ### Testing Approach
 
-個人開発者向けのシンプルなテスト戦略：
+1. **Unit Testing**
+   - FlightCodeValidator: 様々な便名パターンテスト
+   - ImageComposer: 画像合成ロジックテスト
+   - FileManager: ファイルパス生成テスト
 
-- **基本的なユニットテスト**: ビジネスロジックの検証
-- **最小限の統合テスト**: 主要フローの動作確認
-- **手動テスト**: 実際の便名での動作確認
+2. **Integration Testing**
+   - CLIコマンド実行テスト
+   - 設定ファイル読込テスト
+   - エラーハンドリングフロー
 
-#### 1. Unit Testing
-```typescript
-// 便名検証のテスト
-test('validates JAL flight numbers', async t => {
-  const validator = new FlightValidator();
-  t.true(validator.validate('JL123'));
-  t.false(validator.validate('XX999'));
-});
+3. **End-to-End Testing**
+   - 実際のJAL/ANAサイトでのスクレイピング
+   - 画像生成から保存までの全フロー
+   - バッチ処理の正常動作確認
 
-// 航空会社判定のテスト
-test('detects airline from flight number', async t => {
-  t.is(detectAirline('JL123'), 'JAL');
-  t.is(detectAirline('NH456'), 'ANA');
-  t.is(detectAirline('BC789'), 'UNSUPPORTED');
-});
-
-// ターミナル番号変換のテスト
-test('converts terminal string to number', async t => {
-  t.is(parseTerminal('第1ターミナル'), 1);
-  t.is(parseTerminal('Terminal 2'), 2);
-  t.is(parseTerminal('T3'), 3);
-});
-
-// ファイル命名規則のテスト
-test('generates correct file name', async t => {
-  const fileName = generateFileName('JL123', new Date('2025-08-08T10:30:00'));
-  t.is(fileName, '2025-08-08/JL123_1030.png');
-});
-```
-
-#### 2. Integration Testing
-```typescript
-// FlightScraperの入出力検証
-test('FlightScraper transforms Stagehand response correctly', async t => {
-  const scraper = new FlightScraper({
-    stagehand: mockStagehandResponse({
-      gate: "12番ゲート",
-      terminal: "第1ターミナル",
-      status: "定刻"
-    })
-  });
-  
-  const result = await scraper.scrapeFlightInfo('JL123');
-  
-  // 正規化された出力を検証
-  t.deepEqual(result, {
-    flightNumber: 'JL123',
-    airline: 'JAL',
-    gate: '12',
-    terminal: 1,
-    status: 'on-time'
-  });
-});
-
-// エラーハンドリングのテスト
-test('handles gate unassigned status', async t => {
-  const scraper = new FlightScraper({
-    stagehand: mockStagehandResponse({
-      gate: "未定",
-      terminal: "第2ターミナル"
-    })
-  });
-  
-  const result = await scraper.scrapeFlightInfo('NH456');
-  t.is(result.status, 'gate-unassigned');
-  t.is(result.gate, undefined);
-});
-
-// タイムアウト処理のテスト
-test('handles timeout gracefully', async t => {
-  const scraper = new FlightScraper({
-    stagehand: mockDelayedResponse(30000) // 30秒遅延
-  });
-  
-  const result = await scraper.scrapeFlightInfo('JL789');
-  t.is(result.error.type, 'TIMEOUT');
-});
-```
+4. **Performance Testing**
+   - 並列処理の負荷テスト
+   - メモリリーク検証
+   - タイムアウト処理確認
 
 ### CI/CD Pipeline
+
 ```mermaid
 graph LR
-    A[Code Push] --> B[Lint]
-    B --> C[Test]
-    C --> D[Build]
+    A[Git Push] --> B[Biome Lint]
+    B --> C[TypeScript Check]
+    C --> D[Unit Tests/AVA]
+    D --> E[Build]
+    E --> F[Integration Tests]
+    F --> G[E2E Tests Mock]
+    G --> H[Package]
+    H --> I[Manual E2E Test]
+    I --> J[Release]
 ```
+
+## Implementation Phases
+
+### Phase 1: 基盤構築（2日）
+- プロジェクト構造セットアップ
+- 基本CLIインターフェース実装
+- 設定管理システム構築
+
+### Phase 2: 検証とフィルタリング（1日）
+- 便名検証ロジック実装
+- 航空会社判定機能
+- バッチ入力処理
+
+### Phase 3: スクレイピング機能（3日）
+- Playwright統合
+- JAL/ANAサイト対応
+- スクリーンショット機能
+
+### Phase 4: 画像処理（2日）
+- Sharp統合
+- 画像合成ロジック
+- テキストオーバーレイ
+
+### Phase 5: 統合とテスト（2日）
+- 全機能統合
+- エラーハンドリング
+- テスト実装
+
+## Dependencies
+
+```json
+{
+  "dependencies": {
+    "ink": "^4.1.0",
+    "react": "^18.2.0",
+    "meow": "^11.0.0",
+    "playwright": "^1.54.2",
+    "@stagehand/lib": "^2.4.2",
+    "sharp": "^0.33.0",
+    "zod": "^3.25.76",
+    "winston": "^3.11.0",
+    "dotenv": "^16.4.5",
+    "ink-spinner": "^5.0.0",
+    "ink-progress-bar": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ava": "^5.2.0",
+    "ink-testing-library": "^3.0.0",
+    "@playwright/test": "^1.54.2"
+  }
+}
+```
+
+## Risk Mitigation
+
+### 技術リスク
+- **航空会社サイト変更**: セレクタの定期更新体制、フォールバック処理
+- **CAPTCHA出現**: 手動介入通知、代替手段の提供
+- **レート制限**: アクセス間隔調整、プロキシ使用
+
+### 運用リスク
+- **大量処理時の負荷**: 並列数制限、リソース監視
+- **画像ストレージ**: 定期クリーンアップ、容量監視
+- **エラー頻発**: 詳細ログ、アラート通知
